@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { CameraIcon, FrownIcon, Loader2Icon, MehIcon, SmileIcon, VideoOffIcon, Volume2Icon, VolumeXIcon } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { moodSongs } from '@/app/data/moodSongs';
 
 // TypeScript declarations for Spotify Web Playback SDK
 declare global {
@@ -74,6 +75,14 @@ export default function MoodPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string>('');
   const [detectionActive, setDetectionActive] = useState(false);
+  const [recommendations, setRecommendations] = useState<Array<{
+    name: string;
+    artist: string;
+    id: string;
+    imageUrl: string;
+    youtubeUrl: string;
+  }>>([]);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
 
   // Mood descriptions
   const moodDescriptions: Record<string, {icon: React.ReactNode, description: string, color: string}> = {
@@ -209,6 +218,22 @@ export default function MoodPage() {
     }
   };
 
+  const fetchRecommendations = async (currentMood: string) => {
+    setIsLoadingRecommendations(true);
+    try {
+      // Get songs for the current mood, or return empty array if mood doesn't exist
+      const moodSpecificSongs = moodSongs[currentMood as keyof typeof moodSongs] || [];
+      // Randomly select up to 5 songs
+      const shuffled = [...moodSpecificSongs].sort(() => 0.5 - Math.random());
+      setRecommendations(shuffled.slice(0, 5));
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      setError('Failed to fetch song recommendations');
+    } finally {
+      setIsLoadingRecommendations(false);
+    }
+  };
+
   const captureMood = async () => {
     if (!mood) return;
 
@@ -235,6 +260,7 @@ export default function MoodPage() {
         confidence
       };
       setMoodHistory(prev => [newEntry, ...prev].slice(0, 10)); // Keep last 10 entries
+      await fetchRecommendations(mood);
     } catch (err) {
       console.error('Error saving mood:', err);
       setError('Failed to save mood. Please try again.');
@@ -616,6 +642,53 @@ export default function MoodPage() {
                     <div className="text-center py-6 text-gray-400">
                       <p>No mood history yet</p>
                       <p className="text-sm mt-1">Detected moods will appear here</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Song Recommendations */}
+                <div className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 p-6">
+                  <h2 className="text-xl font-semibold mb-4">Song Recommendations</h2>
+                  
+                  {isLoadingRecommendations ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2Icon className="w-6 h-6 animate-spin text-gray-400" />
+                    </div>
+                  ) : recommendations.length > 0 ? (
+                    <div className="space-y-4">
+                      {recommendations.map((track) => (
+                        <motion.div
+                          key={track.id}
+                          className="flex items-center gap-4 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          {track.imageUrl && (
+                            <img 
+                              src={track.imageUrl} 
+                              alt={track.name}
+                              className="w-12 h-12 rounded-md object-cover"
+                            />
+                          )}
+                          <div className="flex-grow">
+                            <div className="font-medium">{track.name}</div>
+                            <div className="text-sm text-gray-400">{track.artist}</div>
+                          </div>
+                          <a
+                            href={track.youtubeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-auto p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                          >
+                            <Volume2Icon className="w-4 h-4" />
+                          </a>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-400">
+                      <p>No recommendations yet</p>
+                      <p className="text-sm mt-1">Save your mood to get song recommendations</p>
                     </div>
                   )}
                 </div>
