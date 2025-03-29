@@ -134,13 +134,8 @@ export default function MoodPage() {
   const [moodHistory, setMoodHistory] = useState<{mood: string; timestamp: Date}[]>([]);
   const [confidence, setConfidence] = useState<number>(0);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [spotifyToken, setSpotifyToken] = useState<string>('');
-  const [spotifyPlayer, setSpotifyPlayer] = useState<SpotifyPlayer | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string>('');
   const [detectionActive, setDetectionActive] = useState(false);
-<<<<<<< Updated upstream
   const [recommendations, setRecommendations] = useState<Array<{
     name: string;
     artist: string;
@@ -149,13 +144,12 @@ export default function MoodPage() {
     youtubeUrl: string;
   }>>([]);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
-=======
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
   const [journalEntry, setJournalEntry] = useState<string>('');
   const [showJournalModal, setShowJournalModal] = useState(false);
-  const [currentPlaylist, setCurrentPlaylist] = useState<{id: string, name: string} | null>(null);
   const [faceapi, setFaceapi] = useState<any>(null);
->>>>>>> Stashed changes
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Mood descriptions
   const moodDescriptions: Record<string, {icon: React.ReactNode, description: string, color: string}> = {
@@ -195,36 +189,6 @@ export default function MoodPage() {
       color: "bg-gradient-to-br from-gray-400 to-slate-600"
     }
   };
-
-  // Initialize Spotify Web Playback SDK
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://sdk.scdn.co/spotify-player.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    window.onSpotifyWebPlaybackSDKReady = () => {
-      const player = new window.Spotify.Player({
-        name: 'Mood Wave Player',
-        getOAuthToken: cb => { cb(spotifyToken); }
-      });
-
-      player.addListener('ready', ({ device_id }) => {
-        console.log('Ready with Device ID', device_id);
-        setSpotifyPlayer(player);
-      });
-
-      player.addListener('not_ready', ({ device_id }) => {
-        console.log('Device ID has gone offline', device_id);
-      });
-
-      player.connect();
-    };
-
-    return () => {
-      script.remove();
-    };
-  }, [spotifyToken]);
 
   useEffect(() => {
     import('@vladmandic/face-api').then((module) => {
@@ -431,86 +395,18 @@ export default function MoodPage() {
     return prompts[Math.floor(Math.random() * prompts.length)];
   };
 
-  // Enhanced function to play mood-based playlist
-  const playMoodMusic = useCallback(async (newMood: string) => {
-    if (!spotifyPlayer || !spotifyToken) return;
-
-    const moodData = moodPlaylists[newMood as keyof typeof moodPlaylists];
-    if (!moodData) return;
-
-    try {
-      // Select a random playlist for this mood
-      const playlist = moodData.playlists[Math.floor(Math.random() * moodData.playlists.length)];
-      setCurrentPlaylist(playlist);
-
-      await fetch(`https://api.spotify.com/v1/me/player/play`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${spotifyToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          context_uri: `spotify:playlist:${playlist.id}`,
-          position_ms: 0
-        })
-      });
-      setIsMusicPlaying(true);
-    } catch (err) {
-      console.error('Error playing Spotify playlist:', err);
-    }
-  }, [spotifyPlayer, spotifyToken]);
-
   // Function to toggle music
   const toggleMusic = async () => {
-    if (!spotifyPlayer) return;
-
-    if (isMusicPlaying) {
-      await spotifyPlayer.pause();
-    } else if (mood) {
-      await playMoodMusic(mood);
-    }
+    if (!mood) return;
     setIsMusicPlaying(!isMusicPlaying);
   };
 
-  // Update music when mood changes
+  // Update recommendations when mood changes
   useEffect(() => {
-    if (mood && confidence > 50 && spotifyPlayer) {
-      playMoodMusic(mood);
+    if (mood && confidence > 50) {
+      fetchRecommendations(mood);
     }
-  }, [mood, spotifyPlayer, confidence, playMoodMusic]);
-
-  // Cleanup Spotify player on unmount
-  useEffect(() => {
-    return () => {
-      if (spotifyPlayer) {
-        spotifyPlayer.disconnect();
-      }
-    };
-  }, [spotifyPlayer]);
-
-  // Function to connect to Spotify
-  const connectSpotify = async () => {
-    try {
-      const response = await fetch('/api/spotify/auth');
-      const data = await response.json();
-      window.location.href = data.url;
-    } catch (err) {
-      console.error('Error initiating Spotify auth:', err);
-      setError('Failed to connect to Spotify. Please try again.');
-    }
-  };
-
-  // Handle Spotify authentication
-  const handleSpotifyToken = useCallback((token: string) => {
-    setSpotifyToken(token);
-  }, []);
-
-  // Update prompt when mood changes
-  useEffect(() => {
-    if (mood) {
-      setSelectedPrompt(getRandomPrompt(mood));
-    }
-  }, [mood]);
+  }, [mood, confidence]);
 
   // Function to save journal entry
   const saveJournalEntry = async () => {
@@ -534,16 +430,21 @@ export default function MoodPage() {
 
       setJournalEntry('');
       setShowJournalModal(false);
-      // You could add a success message here
     } catch (err) {
       console.error('Error saving journal entry:', err);
       setError('Failed to save journal entry. Please try again.');
     }
   };
 
+  // Update prompt when mood changes
+  useEffect(() => {
+    if (mood) {
+      setSelectedPrompt(getRandomPrompt(mood));
+    }
+  }, [mood]);
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <SpotifyAuthHandler onToken={handleSpotifyToken} />
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 text-white p-4 md:p-8">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
@@ -562,34 +463,7 @@ export default function MoodPage() {
               </p>
             </div>
             
-            <div className="flex gap-3">
-              {!spotifyToken ? (
-                <button
-                  onClick={connectSpotify}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 transition-colors"
-                >
-                  <span>Connect Spotify</span>
-                </button>
-              ) : (
-                <button
-                  onClick={toggleMusic}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-colors"
-                  disabled={!mood}
-                >
-                  {isMusicPlaying ? (
-                    <>
-                      <VolumeXIcon className="w-5 h-5" />
-                      <span>Mute Music</span>
-                    </>
-                  ) : (
-                    <>
-                      <Volume2Icon className="w-5 h-5" />
-                      <span>Play Music</span>
-                    </>
-                  )}
-                </button>
-              )}
-
+            <div className="flex gap-4">
               <button
                 onClick={isCameraActive ? stopVideo : startVideo}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-colors"
@@ -611,7 +485,6 @@ export default function MoodPage() {
                 <button
                   onClick={captureMood}
                   className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 transition-colors"
-                  disabled={!mood}
                 >
                   Save Current Mood
                 </button>
@@ -769,7 +642,6 @@ export default function MoodPage() {
                   )}
                 </div>
 
-<<<<<<< Updated upstream
                 {/* Song Recommendations */}
                 <div className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 p-6">
                   <h2 className="text-xl font-semibold mb-4">Song Recommendations</h2>
@@ -816,18 +688,14 @@ export default function MoodPage() {
                     </div>
                   )}
                 </div>
-=======
                 {/* Add this inside the mood display section, after the current mood analysis */}
                 {mood && (
                   <div className="space-y-4 mt-6">
                     {/* Music Recommendation */}
-                    {currentPlaylist && (
-                      <div className="p-4 rounded-lg bg-white/5">
-                        <h3 className="text-sm font-medium text-gray-300">Now Playing:</h3>
-                        <p className="text-white">{currentPlaylist.name}</p>
-                        <p className="text-sm text-gray-400">{moodPlaylists[mood as keyof typeof moodPlaylists]?.description}</p>
-                      </div>
-                    )}
+                    <div className="p-4 rounded-lg bg-white/5">
+                      <h3 className="text-sm font-medium text-gray-300">Now Playing:</h3>
+                      <p className="text-white">{moodPlaylists[mood as keyof typeof moodPlaylists]?.description}</p>
+                    </div>
 
                     {/* Journal Prompt */}
                     <div className="p-4 rounded-lg bg-white/5">
@@ -842,7 +710,6 @@ export default function MoodPage() {
                     </div>
                   </div>
                 )}
->>>>>>> Stashed changes
               </div>
             </div>
           )}
@@ -868,7 +735,10 @@ export default function MoodPage() {
                   Cancel
                 </button>
                 <button
-                  onClick={saveJournalEntry}
+                  onClick={() => {
+                    saveJournalEntry();
+                    setShowJournalModal(false);
+                  }}
                   className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 transition-colors"
                 >
                   Save Entry
