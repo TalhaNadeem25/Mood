@@ -6,6 +6,13 @@ declare global {
 }
 
 const ioHandler = (req: Request) => {
+  const { searchParams } = new URL(req.url);
+  const token = searchParams.get('token');
+  
+  if (!token) {
+    return new Response('Missing token', { status: 401 });
+  }
+
   if (!global.io) {
     console.log('Initializing Socket.IO server...');
     global.io = new Server({

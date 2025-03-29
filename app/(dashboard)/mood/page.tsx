@@ -1,6 +1,5 @@
 'use client';
 
-import * as faceapi from 'face-api.js';
 import { motion } from 'framer-motion';
 import { CameraIcon, FrownIcon, Loader2Icon, MehIcon, SmileIcon, VideoOffIcon, Volume2Icon, VolumeXIcon } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -27,15 +26,82 @@ interface SpotifyPlayer {
   pause(): Promise<void>;
 }
 
-// Spotify playlist IDs for different moods
+// Enhanced mood playlists with multiple options per emotion
 const moodPlaylists = {
-  happy: '37i9dQZF1DX3rxVfibe1L0',  // Happy Hits
-  sad: '37i9dQZF1DX7qK8ma5wgG1',    // Sad Songs
-  angry: '37i9dQZF1DX4sWSpwq3LiO',  // Peaceful Piano
-  fearful: '37i9dQZF1DWXe9gFZP0gtP', // Ambient Relaxation
-  disgusted: '37i9dQZF1DX9uKNf5jGX6m', // Mood Booster
-  surprised: '37i9dQZF1DX6GwdWRQMQpq', // Energy Boost
-  neutral: '37i9dQZF1DX4dyzvuaRJ0n'  // Peaceful Meditation
+  happy: {
+    playlists: [
+      { id: '37i9dQZF1DX3rxVfibe1L0', name: 'Happy Hits' },
+      { id: '37i9dQZF1DX9XIFQuFvzM4', name: 'Mood Booster' },
+      { id: '37i9dQZF1DX2sUQwD7tbmL', name: 'Feel-Good Indie Rock' }
+    ],
+    description: 'Uplifting and energetic music to maintain your positive vibes'
+  },
+  sad: {
+    playlists: [
+      { id: '37i9dQZF1DX7qK8ma5wgG1', name: 'Sad Songs' },
+      { id: '37i9dQZF1DXbm0dp7JzqHZ', name: 'Sad Lofi' },
+      { id: '37i9dQZF1DX889U0CL85jj', name: 'Life Sucks' }
+    ],
+    description: 'Comforting melodies to help process your emotions'
+  },
+  angry: {
+    playlists: [
+      { id: '37i9dQZF1DX4sWSpwq3LiO', name: 'Calming Piano' },
+      { id: '37i9dQZF1DX2TRYkJECvfC', name: 'Peaceful Guitar' },
+      { id: '37i9dQZF1DWZqd5JICZI0u', name: 'Peaceful Meditation' }
+    ],
+    description: 'Soothing music to help calm your mind'
+  },
+  fearful: {
+    playlists: [
+      { id: '37i9dQZF1DWXe9gFZP0gtP', name: 'Ambient Relaxation' },
+      { id: '37i9dQZF1DX9uKNf5jGX6m', name: 'Stress Relief' },
+      { id: '37i9dQZF1DX0jgyAiPl8Af', name: 'Lofi Sleep' }
+    ],
+    description: 'Gentle ambient sounds to reduce anxiety'
+  },
+  neutral: {
+    playlists: [
+      { id: '37i9dQZF1DX4dyzvuaRJ0n', name: 'Peaceful Meditation' },
+      { id: '37i9dQZF1DX1s9knjP51Oa', name: 'Calm Vibes' },
+      { id: '37i9dQZF1DX3Ogo9pFvBkY', name: 'Ambient Chill' }
+    ],
+    description: 'Balanced music to maintain your steady state'
+  }
+};
+
+// Journaling prompts based on mood
+const journalingPrompts = {
+  happy: [
+    "What made you smile today?",
+    "How can you spread this joy to others?",
+    "Describe three things that contributed to your happiness",
+    "What positive changes have you noticed recently?"
+  ],
+  sad: [
+    "What's weighing on your mind?",
+    "When did you last feel better, and what changed?",
+    "What small thing could brighten your day right now?",
+    "What would you tell a friend feeling this way?"
+  ],
+  angry: [
+    "What triggered this feeling?",
+    "How could this situation be viewed differently?",
+    "What would help you feel more at peace?",
+    "What's one positive action you could take right now?"
+  ],
+  fearful: [
+    "What's causing your anxiety?",
+    "What's the worst that could happen, and how would you handle it?",
+    "What has helped you feel safe in the past?",
+    "What's one small step you could take to feel more secure?"
+  ],
+  neutral: [
+    "How would you like to feel today?",
+    "What's one thing you're looking forward to?",
+    "What's something you'd like to improve?",
+    "What's been on your mind lately?"
+  ]
 };
 
 // Create a client component for Spotify auth handling
@@ -62,7 +128,6 @@ function SpotifyAuthHandler({ onToken }: { onToken: (token: string) => void }) {
 }
 
 export default function MoodPage() {
-  //const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [mood, setMood] = useState<string>('');
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -75,6 +140,7 @@ export default function MoodPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string>('');
   const [detectionActive, setDetectionActive] = useState(false);
+<<<<<<< Updated upstream
   const [recommendations, setRecommendations] = useState<Array<{
     name: string;
     artist: string;
@@ -83,6 +149,13 @@ export default function MoodPage() {
     youtubeUrl: string;
   }>>([]);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
+=======
+  const [selectedPrompt, setSelectedPrompt] = useState<string>('');
+  const [journalEntry, setJournalEntry] = useState<string>('');
+  const [showJournalModal, setShowJournalModal] = useState(false);
+  const [currentPlaylist, setCurrentPlaylist] = useState<{id: string, name: string} | null>(null);
+  const [faceapi, setFaceapi] = useState<any>(null);
+>>>>>>> Stashed changes
 
   // Mood descriptions
   const moodDescriptions: Record<string, {icon: React.ReactNode, description: string, color: string}> = {
@@ -154,18 +227,21 @@ export default function MoodPage() {
   }, [spotifyToken]);
 
   useEffect(() => {
-    loadModels();
+    import('@vladmandic/face-api').then((module) => {
+      setFaceapi(module);
+      loadModels(module);
+    });
   }, []);
 
-  const loadModels = async () => {
+  const loadModels = async (faceapiModule: any) => {
     try {
       setIsLoading(true);
       await Promise.all([
-        faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
-        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-        faceapi.nets.faceExpressionNet.loadFromUri('/models'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+        faceapiModule.nets.ssdMobilenetv1.loadFromUri('/models'),
+        faceapiModule.nets.tinyFaceDetector.loadFromUri('/models'),
+        faceapiModule.nets.faceLandmark68Net.loadFromUri('/models'),
+        faceapiModule.nets.faceExpressionNet.loadFromUri('/models'),
+        faceapiModule.nets.faceRecognitionNet.loadFromUri('/models')
       ]);
       setIsLoading(false);
     } catch (err) {
@@ -174,7 +250,6 @@ export default function MoodPage() {
       console.error(err);
     }
   };
-
 
   const startVideo = async () => {
     try {
@@ -284,11 +359,13 @@ export default function MoodPage() {
       }
 
       try {
-        // Ensure WebGL backend is ready
-        if (!faceapi.tf.getBackend()) {
-          await faceapi.tf.setBackend('webgl');
-          await faceapi.tf.ready();
-        }
+        // Initialize WebGL backend
+        const tf = faceapi.tf as unknown as {
+          setBackend: (backend: string) => Promise<void>;
+          ready: () => Promise<void>;
+        };
+        await tf.setBackend('webgl');
+        await tf.ready();
 
         console.log('Running face detection...');
         const detections = await faceapi
@@ -299,11 +376,11 @@ export default function MoodPage() {
         console.log('Detection results:', detections);
 
         if (detections && detections.length > 0) {
-          const expressions = detections[0].expressions;
+          const expressions = detections[0].expressions as Record<string, number>;
           console.log('Detected expressions:', expressions);
           const [dominantMood, confidenceValue] = Object.entries(expressions).reduce(
             (a, b) => a[1] > b[1] ? a : b
-          );
+          ) as [string, number];
           
           setMood(dominantMood);
           setConfidence(Math.round(confidenceValue * 100));
@@ -329,9 +406,9 @@ export default function MoodPage() {
           setMood('');
           setConfidence(0);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Detection error:', err);
-        if (err.message?.includes('WebGL')) {
+        if (err instanceof Error && err.message.includes('WebGL')) {
           setError('WebGL error occurred. Please try refreshing the page or using a different browser.');
         }
       }
@@ -348,14 +425,24 @@ export default function MoodPage() {
     };
   }, [isCameraActive, detectionActive]);
 
-  // Function to play mood-based playlist
+  // Function to get a random prompt for the current mood
+  const getRandomPrompt = (currentMood: string) => {
+    const prompts = journalingPrompts[currentMood as keyof typeof journalingPrompts] || journalingPrompts.neutral;
+    return prompts[Math.floor(Math.random() * prompts.length)];
+  };
+
+  // Enhanced function to play mood-based playlist
   const playMoodMusic = useCallback(async (newMood: string) => {
     if (!spotifyPlayer || !spotifyToken) return;
 
-    const playlistId = moodPlaylists[newMood as keyof typeof moodPlaylists];
-    if (!playlistId) return;
+    const moodData = moodPlaylists[newMood as keyof typeof moodPlaylists];
+    if (!moodData) return;
 
     try {
+      // Select a random playlist for this mood
+      const playlist = moodData.playlists[Math.floor(Math.random() * moodData.playlists.length)];
+      setCurrentPlaylist(playlist);
+
       await fetch(`https://api.spotify.com/v1/me/player/play`, {
         method: 'PUT',
         headers: {
@@ -363,7 +450,7 @@ export default function MoodPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          context_uri: `spotify:playlist:${playlistId}`,
+          context_uri: `spotify:playlist:${playlist.id}`,
           position_ms: 0
         })
       });
@@ -417,6 +504,42 @@ export default function MoodPage() {
   const handleSpotifyToken = useCallback((token: string) => {
     setSpotifyToken(token);
   }, []);
+
+  // Update prompt when mood changes
+  useEffect(() => {
+    if (mood) {
+      setSelectedPrompt(getRandomPrompt(mood));
+    }
+  }, [mood]);
+
+  // Function to save journal entry
+  const saveJournalEntry = async () => {
+    try {
+      const response = await fetch('/api/journal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mood,
+          prompt: selectedPrompt,
+          entry: journalEntry,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save journal entry');
+      }
+
+      setJournalEntry('');
+      setShowJournalModal(false);
+      // You could add a success message here
+    } catch (err) {
+      console.error('Error saving journal entry:', err);
+      setError('Failed to save journal entry. Please try again.');
+    }
+  };
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -646,6 +769,7 @@ export default function MoodPage() {
                   )}
                 </div>
 
+<<<<<<< Updated upstream
                 {/* Song Recommendations */}
                 <div className="rounded-xl bg-white/5 backdrop-blur-md border border-white/10 p-6">
                   <h2 className="text-xl font-semibold mb-4">Song Recommendations</h2>
@@ -692,10 +816,67 @@ export default function MoodPage() {
                     </div>
                   )}
                 </div>
+=======
+                {/* Add this inside the mood display section, after the current mood analysis */}
+                {mood && (
+                  <div className="space-y-4 mt-6">
+                    {/* Music Recommendation */}
+                    {currentPlaylist && (
+                      <div className="p-4 rounded-lg bg-white/5">
+                        <h3 className="text-sm font-medium text-gray-300">Now Playing:</h3>
+                        <p className="text-white">{currentPlaylist.name}</p>
+                        <p className="text-sm text-gray-400">{moodPlaylists[mood as keyof typeof moodPlaylists]?.description}</p>
+                      </div>
+                    )}
+
+                    {/* Journal Prompt */}
+                    <div className="p-4 rounded-lg bg-white/5">
+                      <h3 className="text-sm font-medium text-gray-300">Reflection Prompt:</h3>
+                      <p className="text-white mt-1">{selectedPrompt}</p>
+                      <button
+                        onClick={() => setShowJournalModal(true)}
+                        className="mt-3 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 transition-colors text-sm"
+                      >
+                        Start Journaling
+                      </button>
+                    </div>
+                  </div>
+                )}
+>>>>>>> Stashed changes
               </div>
             </div>
           )}
         </div>
+
+        {/* Journal Modal */}
+        {showJournalModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-gray-800 rounded-xl p-6 max-w-2xl w-full">
+              <h2 className="text-xl font-semibold mb-4">Journal Entry</h2>
+              <p className="text-gray-300 mb-4">{selectedPrompt}</p>
+              <textarea
+                value={journalEntry}
+                onChange={(e) => setJournalEntry(e.target.value)}
+                className="w-full h-40 p-3 rounded-lg bg-gray-700 text-white resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Write your thoughts here..."
+              />
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  onClick={() => setShowJournalModal(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveJournalEntry}
+                  className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 transition-colors"
+                >
+                  Save Entry
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Suspense>
   );

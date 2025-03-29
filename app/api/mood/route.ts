@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const data = await request.json();
-    // Add face detection logic here
+    const body = await req.json();
+    const { mood, confidence, timestamp } = body;
     
-    return NextResponse.json({ mood: "happy" }); // Placeholder response
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to process image" }, { status: 500 });
+    const client = await clientPromise;
+    const db = client.db("MentalHealth");
+    const result = await db.collection("moods").insertOne({
+      mood,
+      confidence,
+      timestamp: new Date(timestamp),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    return NextResponse.json({ success: true, id: result.insertedId });
+  } catch {
+    return NextResponse.json({ error: "Failed to save mood" }, { status: 500 });
   }
 } 

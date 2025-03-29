@@ -6,12 +6,11 @@ import {
   CalendarIcon, 
   ChatBubbleLeftIcon, 
   ChartBarIcon, 
-  Cog6ToothIcon,
   DocumentTextIcon,
   BoltIcon,
   HeartIcon,
   ArrowPathIcon,
-  CogIcon
+
 } from '@heroicons/react/24/outline';
 import { MessageCircle, MapPin } from 'lucide-react';
 import ProgressRing from '@/components/dashboard/ProgressRing';

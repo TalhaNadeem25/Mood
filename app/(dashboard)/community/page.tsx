@@ -1,90 +1,35 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MessageCircle, Shield, MapPin, Filter } from 'lucide-react';
+import { MessageCircle, Shield } from 'lucide-react';
+import { useAuth } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
-import io from 'socket.io-client';
-
-interface Post {
-  _id: string;
-  content: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-  isAIApproved: boolean;
-  location?: string | null;
-}
+import { io } from 'socket.io-client';
+import { Post } from "@/types/post";
 
 export default function CommunityPage() {
-  const { user } = useUser();
+  const { userId } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPost, setNewPost] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [socket, setSocket] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // const [error, setError] = useState<string | null>(null);
+  // const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize Socket.IO connection
-    const initSocket = async () => {
-      await fetch('/api/socket');
-      const newSocket = io({
-        path: '/api/socket',
-      });
+    const socket = io(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+    
+    socket.on('newPost', (post: Post) => {
+      setPosts(prev => [post, ...prev]);
+    });
 
-      newSocket.on('connect', () => {
-        console.log('Connected to Socket.IO server');
-      });
-
-      newSocket.on('newPost', (post: Post) => {
-        setPosts(prev => [post, ...prev]);
-      });
-
-      setSocket(newSocket);
-
-      return () => {
-        newSocket.close();
-      };
+    return () => {
+      socket.disconnect();
     };
-
-    initSocket();
-
-    // Fetch initial posts
-    fetchPosts();
   }, []);
-
-  const fetchPosts = async () => {
-    try {
-      setIsLoading(true);
-      console.log('Fetching posts...');
-      const response = await fetch('/api/posts');
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch posts: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Fetched posts:', data);
-      
-      if (!Array.isArray(data)) {
-        console.error('Received invalid data format:', data);
-        throw new Error('Invalid data format received');
-      }
-      
-      setPosts(data);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      // Show error to user
-      setPosts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPost.trim() || !user) return;
+    if (!newPost.trim() || !userId) return;
 
     setIsSubmitting(true);
     try {
@@ -95,7 +40,7 @@ export default function CommunityPage() {
         },
         body: JSON.stringify({
           content: newPost,
-          userId: user.id,
+          userId: userId,
         }),
       });
 
@@ -162,12 +107,7 @@ export default function CommunityPage() {
 
         {/* Posts Feed */}
         <div className="space-y-6">
-          {isLoading ? (
-            <div className="text-center py-12 text-gray-400">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="mt-4">Loading posts...</p>
-            </div>
-          ) : posts.length > 0 ? (
+          {posts.length > 0 ? (
             posts.map((post) => (
               <motion.div
                 key={post._id}

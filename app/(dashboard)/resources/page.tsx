@@ -21,63 +21,27 @@ interface Resource {
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
+  // const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
     type: 'all',
     cost: 'all',
     rating: 0
   });
-  const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
 
   useEffect(() => {
-    // Get user's location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-        }
-      );
-    }
-
-    // TODO: Fetch resources from API
-    // For now, using mock data
-    const mockResources: Resource[] = [
-      {
-        id: '1',
-        name: 'Community Mental Health Center',
-        type: 'therapist',
-        address: '123 Main St, City, State',
-        phone: '(555) 123-4567',
-        cost: 'low',
-        hours: 'Mon-Fri: 9AM-5PM',
-        rating: 4.5,
-        coordinates: {
-          lat: 32.7767,
-          lng: -96.7970
-        }
-      },
-      {
-        id: '2',
-        name: '24/7 Crisis Hotline',
-        type: 'hotline',
-        address: 'N/A',
-        phone: '1-800-273-8255',
-        cost: 'free',
-        hours: '24/7',
-        rating: 5,
-        coordinates: {
-          lat: 32.7767,
-          lng: -96.7970
-        }
+    const fetchResources = async () => {
+      try {
+        const response = await fetch('/api/resources');
+        const data = await response.json();
+        setResources(data);
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+      } finally {
+        // setIsLoading(false);
       }
-    ];
+    };
 
-    setResources(mockResources);
+    fetchResources();
   }, []);
 
   const filteredResources = resources.filter(resource => {
