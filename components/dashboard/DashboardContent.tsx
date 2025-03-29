@@ -13,10 +13,12 @@ import {
   ArrowPathIcon,
   CogIcon
 } from '@heroicons/react/24/outline';
+import { MessageCircle, MapPin } from 'lucide-react';
 import ProgressRing from '@/components/dashboard/ProgressRing';
 import HexButton from '@/components/dashboard/HexButton';
 import DataCard from '@/components/dashboard/DataCard';
 import ActivityItem from '@/components/dashboard/ActivityItem';
+import Link from 'next/link';
 
 export interface DashboardContentProps {
   fullName: string;
@@ -234,30 +236,38 @@ export default function DashboardContent({ fullName }: DashboardContentProps) {
         </div>
 
         {/* Quick Actions */}
-        <motion.div 
+        <motion.div
           variants={container}
           className="grid grid-cols-2 md:grid-cols-4 gap-4"
         >
-          <HexButton 
-            icon={DocumentTextIcon} 
-            label="New Check-in" 
-            color="bg-gradient-to-tr from-futuristic-blue/20 to-futuristic-cyan/20" 
-          />
-          <HexButton 
-            icon={ChatBubbleLeftIcon} 
-            label="Start Chat" 
-            color="bg-gradient-to-tr from-green-500/20 to-emerald-400/20" 
-          />
-          <HexButton 
-            icon={ChartBarIcon} 
-            label="View Reports" 
-            color="bg-gradient-to-tr from-futuristic-purple/20 to-violet-500/20" 
-          />
-          <HexButton 
-            icon={CogIcon} 
-            label="Settings" 
-            color="bg-gradient-to-tr from-gray-500/20 to-gray-600/20" 
-          />
+          <Link href="/mood">
+            <HexButton 
+              icon={DocumentTextIcon} 
+              label="New Check-in" 
+              color="bg-gradient-to-tr from-futuristic-blue/20 to-futuristic-cyan/20" 
+            />
+          </Link>
+          <Link href="/chat">
+            <HexButton 
+              icon={ChatBubbleLeftIcon} 
+              label="Start Chat" 
+              color="bg-gradient-to-tr from-green-500/20 to-emerald-400/20" 
+            />
+          </Link>
+          <Link href="/community">
+            <HexButton 
+              icon={MessageCircle} 
+              label="Community" 
+              color="bg-gradient-to-tr from-purple-500/20 to-pink-400/20" 
+            />
+          </Link>
+          <Link href="/resources">
+            <HexButton 
+              icon={MapPin} 
+              label="Resources" 
+              color="bg-gradient-to-tr from-orange-500/20 to-red-400/20" 
+            />
+          </Link>
         </motion.div>
 
         {/* Footer */}

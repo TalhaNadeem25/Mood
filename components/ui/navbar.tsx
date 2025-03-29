@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import { MessageCircle, MapPin } from 'lucide-react';
 
 export default async function Navbar() {
   const { userId } = await auth();
@@ -35,6 +36,20 @@ export default async function Navbar() {
                   className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   AI Chat
+                </Link>
+                <Link 
+                  href="/community" 
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Community
+                </Link>
+                <Link 
+                  href="/resources" 
+                  className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1"
+                >
+                  <MapPin className="w-4 h-4" />
+                  Resources
                 </Link>
                 <UserButton afterSignOutUrl="/" />
               </>
