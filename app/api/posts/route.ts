@@ -18,8 +18,8 @@ export async function GET() {
     const serializedPosts = posts.map(post => ({
       ...post,
       _id: post._id.toString(),
-      createdAt: post.createdAt.toISOString(),
-      updatedAt: post.updatedAt.toISOString()
+      createdAt: post.createdAt ? new Date(post.createdAt).toISOString() : new Date().toISOString(),
+      updatedAt: post.updatedAt ? new Date(post.updatedAt).toISOString() : new Date().toISOString()
     }));
     
     return NextResponse.json(serializedPosts);
