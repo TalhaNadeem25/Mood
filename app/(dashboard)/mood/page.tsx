@@ -152,6 +152,7 @@ export default function MoodPage() {
     try {
       setIsLoading(true);
       await Promise.all([
+        faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
         faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
         faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
         faceapi.nets.faceExpressionNet.loadFromUri('/models'),
@@ -265,7 +266,7 @@ export default function MoodPage() {
 
         console.log('Running face detection...');
         const detections = await faceapi
-          .detectAllFaces(videoRef.current)
+          .detectAllFaces(videoRef.current, new faceapi.SsdMobilenetv1Options())
           .withFaceLandmarks()
           .withFaceExpressions();
 
