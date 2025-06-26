@@ -2,6 +2,9 @@
   "name": "mood-wellness",
   "version": "0.1.0",
   "private": true,
+  "overrides": {
+    "node-fetch": "^2.6.7"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -16,7 +19,7 @@
     "@vladmandic/face-api": "^1.7.15",
     "axios": "^1.8.4",
     "encoding": "^0.1.13",
-    "face-api.js": "^0.22.2",
+    "face-api.js": "^0.20.0",
     "firebase": "^11.5.0",
     "framer-motion": "^12.6.2",
     "lucide-react": "^0.485.0",
